@@ -86,7 +86,7 @@ Shapely==1.7.1
 six==1.15.0
 smmap==4.0.0
 soupsieve==2.2.1
-streamlit==0.79.0
+streamlit==0.83.0
 terminado==0.9.4
 testpath==0.4.4
 threadpoolctl==2.1.0
