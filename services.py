@@ -95,14 +95,18 @@ def load_dataset(path, na_values=""):
 @st.cache(suppress_st_warning=True)
 def calculate_percentage_votes_by_county(df_elections, candidate = 0):
     """
-    Calculate counties with the highest percentage of votes in favor of the input candidate
+    Calculates the percentage of votes for the input candidate by county.
+    If the candidate is in, it returns the percentage of votes, otherwise the full dataframe with the percentages of votes
     
+    It is possible to specify a key for:
+    - candidate: 0 for total
+        
     Input parameters:
-    df_election (pandas.core.frame.DataFrame): Dataframe with elections data
-    candidate (str), default 0 (all): candidate name
+    df_elections (pandas.core.frame.DataFrame): elections dataframe
+    candidate (str): candidate  
     
     Output:
-    pandas.core.frame.DataFrame: dataframe containing percentage of votes for the input candidate, grouped by state and county
+    pandas.core.frame.DataFrame: dataframe containing the percentage of votes for the input candidate by each county 
     
     """
     sum_votes_county = df_elections.groupby(['state', 'county'], as_index=False).sum().drop(columns = ['STATEFP', 'COUNTYFP'])
@@ -116,14 +120,18 @@ def calculate_percentage_votes_by_county(df_elections, candidate = 0):
 @st.cache(suppress_st_warning=True)
 def calculate_percentage_votes_by_state(df_elections, candidate = 0):
     """
-    Calculate states with the highest percentage of votes in favor of the input candidate
+    Calculates the percentage of votes for the input candidate by state.
+    If the candidate is in, it returns the percentage of votes, otherwise the full dataframe with the percentages of votes
     
+    It is possible to specify a key for:
+    - candidate: 0 for total
+        
     Input parameters:
-    df_election (pandas.core.frame.DataFrame): Dataframe with elections data
-    candidate (str), default 0 (all): candidate name
+    df_elections (pandas.core.frame.DataFrame): elections dataframe
+    candidate (str): candidate  
     
     Output:
-    pandas.core.frame.DataFrame: dataframe containing percentage of votes for the input candidate, grouped by state
+    pandas.core.frame.DataFrame: dataframe containing the percentage of votes for the input candidate by each state 
     
     """
     votes_candidate_by_state = df_elections.groupby(['STATENAME', 'candidate'], as_index=False).sum()
@@ -139,16 +147,14 @@ def calculate_percentage_votes_by_state(df_elections, candidate = 0):
 @st.cache(suppress_st_warning=True)
 def calculate_percentage_race_by_county(df_demography, race, agegrp = 0, year = 9):
     """
-    Calculate counties with the highest percentage of citizens belonging to the input race.
+    Calculates the percentage of input race (male + female) for each county
     It is possible to specify a key for:
     - age group (0-18): 0 for total, other for age group from 0 years to over 85 years
-    - year (1-12): from 4/1/2010 to 7/1/2019, default 2016
-    
-    By default, with the year parameter set to 0, the function calculates an average on the population over the last 10 years
-    
+    - year (1-12): from 4/1/2010 to 7/1/2019, default 9: 7/1/2016
+        
     Input parameters:
-    demography_set (pandas.core.frame.DataFrame): dataframe with demography data
-    candidate (str): candidate name
+    df_demography (pandas.core.frame.DataFrame): demography dataframe
+    race (str): race 
     agegrp (int): age group
     year (int): year 
     
@@ -167,6 +173,22 @@ def calculate_percentage_race_by_county(df_demography, race, agegrp = 0, year = 
 
 @st.cache(suppress_st_warning=True)
 def calculate_percentage_race_by_state(df_demography,race, agegrp = 0, year = 9):
+    """
+    Calculates the percentage of input race (male + female) for each state
+    It is possible to specify a key for:
+    - age group (0-18): 0 for total, other for age group from 0 years to over 85 years
+    - year (1-12): from 4/1/2010 to 7/1/2019, default 9: 7/1/2016
+        
+    Input parameters:
+    df_demography (pandas.core.frame.DataFrame): demography dataframe
+    race (str): race 
+    agegrp (int): age group
+    year (int): year 
+    
+    Output:
+    pandas.core.frame.DataFrame: dataframe containing percentage of citizens for the input race, grouped by state
+    
+    """
     df_race_m = df_demography[(df_demography.AGEGRP == agegrp) & (df_demography.YEAR == year)].groupby(['STNAME']).sum()[race + "_MALE"].to_frame(race).reset_index()
     df_race_f = df_demography[(df_demography.AGEGRP == agegrp) & (df_demography.YEAR == year)].groupby(['STNAME']).sum()[race + "_FEMALE"].to_frame(race).reset_index()
     df_race_tot = (df_race_m[race] + df_race_f[race]).to_frame()
@@ -199,11 +221,47 @@ def get_table_download_link(df):
 
 
 def get_elections_and_race_by_county(df_elections, df_demography, race, agegrp = 0, year = 9):
+    """
+    Calculates the percentage of citizens belonging the input race and the percentage of votes to a candidate from each county
+    
+    It is possible to specify a key for:
+    - age group (0-18): 0 for total, other for age group from 0 years to over 85 years
+    - year (1-12): from 4/1/2010 to 7/1/2019, default 9: 7/1/2016
+        
+    Input parameters:
+    df_elections (pandas.core.frame.DataFrame): elections dataframe
+    df_demography (pandas.core.frame.DataFrame): demography dataframe
+    race (str): race
+    agegrp (int): age group
+    year (int): year 
+    
+    Output:
+    pandas.core.frame.DataFrame: dataframe containing the percentage of citizens belonging to the input race with the percentage of votes to a candidate from each county
+    
+    """
     elections_with_percentage_by_county = calculate_percentage_votes_by_county(df_elections)
     percentage_race = calculate_percentage_race_by_county(df_demography, race, agegrp = agegrp, year = year)
     return pd.merge(elections_with_percentage_by_county, percentage_race, how="inner", left_on=["STATENAME","COUNTYFP"], right_on=["STNAME","COUNTY"])
 
 def get_elections_and_race_by_state(df_elections, df_demography, race, agegrp = 0, year = 9):
+    """
+    Calculates the percentage of citizens belonging the input race and the percentage of votes to a candidate from each state
+    
+    It is possible to specify a key for:
+    - age group (0-18): 0 for total, other for age group from 0 years to over 85 years
+    - year (1-12): from 4/1/2010 to 7/1/2019, default 9: 7/1/2016
+        
+    Input parameters:
+    df_elections (pandas.core.frame.DataFrame): elections dataframe
+    df_demography (pandas.core.frame.DataFrame): demography dataframe
+    race (str): race
+    agegrp (int): age group
+    year (int): year 
+    
+    Output:
+    pandas.core.frame.DataFrame: dataframe containing the percentage of citizens belonging to the input race with the percentage of votes to a candidate from each state
+    
+    """
     elections_with_percentage_by_state = calculate_percentage_votes_by_state(df_elections)
     percentage_race = calculate_percentage_race_by_state(df_demography, race, agegrp= agegrp, year = year)
     return pd.merge(elections_with_percentage_by_state, percentage_race, how="inner", left_on=["STATENAME"], right_on=["STNAME"])
@@ -252,7 +310,24 @@ def get_votes_and_procapite_by_winner(elections_dataset, procapite_dataset):
     return votes_and_pro_capite
 
 @st.cache(suppress_st_warning=True)
-def get_corr_coef_for_candidate(candidate, df, x, y, plot = True):   
+def get_corr_coef_for_candidate(candidate, df, x, y, plot = True): 
+        
+    """
+    Calculates the correlation coefficient between two variables filtering the dataframe by candidate
+    It is possible to specify a key for:
+    - plot: To graphically display the result (True, by default) 
+        
+    Input parameters:
+    candidate (str):                    candidate name
+    df (pandas.core.frame.DataFrame):   dataframe to analyze 
+    x (str):                            column name to be interpreted as x-axis
+    y (str):                            column name to be interpreted as y-axis
+    plot (bool):                         display
+    
+    Output:
+    numpy.float64: value of the correlation coefficient between the variables x and y
+    
+    """  
     df_candidate = df[df.candidate == candidate]
     cc = np.corrcoef(df_candidate[x], df_candidate[y])[1,0] 
     if not np.isnan(cc):
