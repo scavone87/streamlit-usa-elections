@@ -24,7 +24,7 @@ def app():
 
     votes_and_procapite_by_candidate = votes_and_procapite[votes_and_procapite.candidate == selected_candidate]
     st.dataframe(votes_and_procapite_by_candidate)
-    c = alt.Chart(votes_and_procapite_by_candidate).mark_circle().encode(alt.X('2016', title="Reddito Pro Capite 2016", scale = alt.Scale(zero = False)), alt.Y('percentage_votes', title=selected_candidate + " votes", scale = alt.Scale(zero = False)), tooltip = ['state','county']).interactive()
+    c = alt.Chart(votes_and_procapite_by_candidate).mark_circle().encode(alt.X('2016', title="Reddito Pro Capite 2016", scale = alt.Scale(zero = False)), alt.Y('percentage_votes', title=selected_candidate + " votes", scale = alt.Scale(zero = False)), tooltip = ['state','county'], color = alt.Color('state')).interactive()
     st.altair_chart(c, use_container_width=True)
     st.write("Coefficiente di correlazione: ", srv.get_corr_coef_for_candidate(selected_candidate, votes_and_procapite, '2016', 'percentage_votes'))
 
@@ -94,7 +94,7 @@ def app():
 
     st.dataframe(race_and_votes)
     percentage_race_graphics = alt.Chart(race_and_votes).mark_circle().encode(alt.X(
-            race_selected, title="Percentage of " + race_selected, scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=candidate + "percentage votes", scale=alt.Scale(zero=False)), tooltip = ['STATENAME','county']).interactive()
+            race_selected, title="Percentage of " + race_selected, scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=candidate + "percentage votes", scale=alt.Scale(zero=False)),  color = alt.Color('STATENAME') ,tooltip = ['STATENAME','county']).interactive()
     st.altair_chart(percentage_race_graphics, use_container_width=True)
     st.write("Coefficiente di correlazione: ", srv.get_corr_coef_for_candidate(
         candidate, race_and_votes, race_selected, 'percentage_votes'))
@@ -131,7 +131,7 @@ def app():
     race_and_votes_state = race_and_votes_state.rename(columns={race_map[race_selected] : race_selected})
     st.dataframe(race_and_votes_state)
     percentage_race_state_graphics = alt.Chart(race_and_votes_state).mark_circle().encode(alt.X(
-            race_selected, title="Percentage of " + race_selected, scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=candidate + " votes", scale=alt.Scale(zero=False)), tooltip = ['STATENAME']).interactive()
+            race_selected, title="Percentage of " + race_selected, scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=candidate + " votes", scale=alt.Scale(zero=False)), color = alt.Color("STATENAME") ,tooltip = ['STATENAME']).interactive()
     st.altair_chart(percentage_race_state_graphics, use_container_width=True)
     st.write("Coefficiente di correlazione: ", srv.get_corr_coef_for_candidate(
         candidate, race_and_votes_state, race_selected, 'percentage_votes'))
@@ -150,9 +150,9 @@ def app():
         key=2
     )
     df_elections = df_elections[df_elections.candidate == candidate]
-    st.dataframe(df_elections)
+    st.dataframe(df_elections.reset_index(drop = True))
     df_elections_graphics = alt.Chart(df_elections).mark_circle().encode(alt.X(
-            'votes', title="votes", scale=alt.Scale(zero=False)), alt.Y('weighted votes', title="weighted votes counties", scale=alt.Scale(zero=False)), tooltip = ['STATENAME','county']).interactive()
+            'votes', title="votes", scale=alt.Scale(zero=False)), alt.Y('weighted votes', title="weighted votes counties", scale=alt.Scale(zero=False)), color = alt.Color('STATENAME') ,tooltip = ['STATENAME','county']).interactive()
     st.altair_chart(df_elections_graphics, use_container_width=True)
     st.write("Coefficiente di correlazione: ", srv.get_corr_coef_for_candidate(candidate, df_elections, 'votes', 'weighted votes'))
     
