@@ -24,13 +24,7 @@ def app():
 
     votes_and_procapite_by_candidate = votes_and_procapite[votes_and_procapite.candidate == selected_candidate]
     st.dataframe(votes_and_procapite_by_candidate)
-    value = st.checkbox("Rendi interattivo il grafico")
-    if value == True:
-        c = alt.Chart(votes_and_procapite_by_candidate).mark_circle().encode(alt.X(
-            '2016', title="Reddito Pro Capite 2016",scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=selected_candidate + " votes"),scale=alt.Scale(zero=False)).interactive()
-    else:
-        c = alt.Chart(votes_and_procapite_by_candidate).mark_circle().encode(alt.X(
-            '2016', title="Reddito Pro Capite 2016",scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=selected_candidate + " votes",scale=alt.Scale(zero=False)))
+    c = alt.Chart(votes_and_procapite_by_candidate).mark_circle().encode(alt.X('2016', title="Reddito Pro Capite 2016", scale = alt.Scale(zero = False)), alt.Y('percentage_votes', title=selected_candidate + " votes", scale = alt.Scale(zero = False))).interactive()
     st.altair_chart(c, use_container_width=True)
     st.write("Coefficiente di correlazione: ", srv.get_corr_coef_for_candidate(selected_candidate, votes_and_procapite, '2016', 'percentage_votes'))
 
@@ -98,13 +92,8 @@ def app():
     race_and_votes = race_and_votes.rename(columns={ race_map[race_selected] : race_selected})
 
     st.dataframe(race_and_votes)
-    interactive = st.checkbox("Rendi interattivo il grafico", key= bool)
-    if interactive == True:
-        percentage_race_graphics = alt.Chart(race_and_votes).mark_circle().encode(alt.X(
+    percentage_race_graphics = alt.Chart(race_and_votes).mark_circle().encode(alt.X(
             race_selected, title="Percentage of " + race_selected, scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=candidate + "percentage votes", scale=alt.Scale(zero=False))).interactive()
-    else:
-        percentage_race_graphics = alt.Chart(race_and_votes).mark_circle().encode(alt.X(
-            race_selected, title="Percentage of " + race_selected, scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=candidate + "percentage votes", scale=alt.Scale(zero=False)))
     st.altair_chart(percentage_race_graphics, use_container_width=True)
     st.write("Coefficiente di correlazione: ", srv.get_corr_coef_for_candidate(
         candidate, race_and_votes, race_selected, 'percentage_votes'))
@@ -140,13 +129,8 @@ def app():
     race_and_votes_state = race_and_votes_state.loc[race_and_votes_state.candidate == candidate, ['STATENAME', 'candidate', 'percentage_votes', 'TOT_POP', race_map[race_selected]]]
     race_and_votes_state = race_and_votes_state.rename(columns={race_map[race_selected] : race_selected})
     st.dataframe(race_and_votes_state)
-    interactive = st.checkbox("Rendi il grafico interattivo")
-    if interactive == True:
-        percentage_race_state_graphics = alt.Chart(race_and_votes_state).mark_circle().encode(alt.X(
+    percentage_race_state_graphics = alt.Chart(race_and_votes_state).mark_circle().encode(alt.X(
             race_selected, title="Percentage of " + race_selected, scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=candidate + " votes", scale=alt.Scale(zero=False))).interactive()
-    else:
-        percentage_race_state_graphics = alt.Chart(race_and_votes_state).mark_circle().encode(alt.X(
-            race_selected, title="Percentage of " + race_selected, scale=alt.Scale(zero=False)), alt.Y('percentage_votes', title=candidate + " votes", scale=alt.Scale(zero=False)))
     st.altair_chart(percentage_race_state_graphics, use_container_width=True)
     st.write("Coefficiente di correlazione: ", srv.get_corr_coef_for_candidate(
         candidate, race_and_votes_state, race_selected, 'percentage_votes'))
@@ -166,13 +150,8 @@ def app():
     )
     df_elections = df_elections[df_elections.candidate == candidate]
     st.dataframe(df_elections)
-    interactive = st.checkbox("Rendi il grafico interattivo", key = 2)
-    if interactive == True:
-        df_elections_graphics = alt.Chart(df_elections).mark_circle().encode(alt.X(
+    df_elections_graphics = alt.Chart(df_elections).mark_circle().encode(alt.X(
             'votes', title="votes", scale=alt.Scale(zero=False)), alt.Y('weighted votes', title="weighted votes counties", scale=alt.Scale(zero=False))).interactive()
-    else:
-        df_elections_graphics = alt.Chart(df_elections).mark_circle().encode(alt.X(
-            'votes', title="votes", scale=alt.Scale(zero=False)), alt.Y('weighted votes', title="weighted votes counties", scale=alt.Scale(zero=False)))
     st.altair_chart(df_elections_graphics, use_container_width=True)
     st.write("Coefficiente di correlazione: ", srv.get_corr_coef_for_candidate(candidate, df_elections, 'votes', 'weighted votes'))
     
@@ -184,21 +163,11 @@ def app():
     )
 
     percentage_female,y = srv.calculate_percentage_woman(demography, elections, winner)
-    df_elections_graphics = pd.DataFrame({'percentage_female': percentage_female.to_list(), 'votes': y.to_list()})
-    interactive = st.checkbox("Rendi il grafico interattivo", key = 3)
-    if interactive == True:
-        df_elections_graphics = alt.Chart(df_elections_graphics).mark_circle().encode(alt.X(
-            'percentage_female', title="percentage_female", scale=alt.Scale(zero=False)), alt.Y('votes', title="votes"), scale=alt.Scale(zero=False)).interactive()
-    else:
-        df_elections_graphics = alt.Chart(df_elections_graphics).mark_circle().encode(alt.X(
-            'percentage_female', title="percentage_female", scale=alt.Scale(zero=False)), alt.Y('votes', title="votes", scale=alt.Scale(zero=False)))
+    df_elections_graphics = pd.DataFrame({'percentage_female': percentage_female.to_list(), 'votes': y.to_list()})    
+    df_elections_graphics = alt.Chart(df_elections_graphics).mark_circle().encode(alt.X('percentage_female', title="percentage_female", scale=alt.Scale(zero=False)), alt.Y('votes', title="votes", scale=alt.Scale(zero=False))).interactive()
+    
     st.altair_chart(df_elections_graphics, use_container_width=True)
     st.write('Coefficiente di correlazione: ', np.corrcoef(percentage_female,y)[1,0])
-
-
-
-
-
 
     st.subheader('Correlazione tra la percentuale di donne afroamericane stimate nel 2016 di uno stato e i voti ottenuti dai Vincitori')
 
@@ -210,12 +179,7 @@ def app():
 
     percentage_female,y = srv.calculate_percentage_woman(demography, elections, winner, race='BA_FEMALE')
     df_elections_graphics = pd.DataFrame({'percentage_female': percentage_female.to_list(), 'votes': y.to_list()})
-    interactive = st.checkbox("Rendi il grafico interattivo", key = 4)
-    if interactive == True:
-        df_elections_graphics = alt.Chart(df_elections_graphics).mark_circle().encode(alt.X(
-            'percentage_female', title="percentage afroamerican female", scale=alt.Scale(zero=False)), alt.Y('votes', title="votes"), scale=alt.Scale(zero=False)).interactive()
-    else:
-        df_elections_graphics = alt.Chart(df_elections_graphics).mark_circle().encode(alt.X(
-            'percentage_female', title="percentage afroamerican female", scale=alt.Scale(zero=False)), alt.Y('votes', title="votes", scale=alt.Scale(zero=False)))
+    df_elections_graphics = alt.Chart(df_elections_graphics).mark_circle().encode(alt.X(
+            'percentage_female', title="percentage afroamerican female", scale=alt.Scale(zero=False)), alt.Y('votes', title="votes", scale=alt.Scale(zero=False))).interactive()
     st.altair_chart(df_elections_graphics, use_container_width=True)
     st.write('Coefficiente di correlazione: ', np.corrcoef(percentage_female,y)[1,0])
