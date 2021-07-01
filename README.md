@@ -1,5 +1,5 @@
 # Streamlit Web App - Elections USA 2016
-> Il sito è stato pubblicato tramite streamlit.io/sharing ed è disponibile sul [sito](share.streamlit.io/scavone87/streamlit-usa-elections/main/main.py)
+> Il sito è stato pubblicato tramite streamlit.io/sharing ed è disponibile sul [sito](https://share.streamlit.io/scavone87/streamlit-usa-elections/main/main.py)
 
 
 ## Installazione Streamlit
