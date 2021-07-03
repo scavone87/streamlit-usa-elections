@@ -1,8 +1,6 @@
-from re import A
 import streamlit as st
-import pandas as pd
-import numpy as np
 import services as srv
+
 
 def app():
     demography = srv.load_dataset('datasets/cc-est2019-alldata-gruppo-4.csv')
@@ -25,9 +23,18 @@ def app():
         "Scegli una fascia d'età",
         list(agegrp_map.keys())
     )
-    data = srv.calculate_percentage_race_by_county(demography,race_map[race_selected], agegrp = agegrp_map[agegrp] , year=year_map[year])
-    data = data.rename(columns = { race_map[race_selected]: race_selected + ' percentage'})
-    row_number = st.slider("Quante contee vuoi visualizzare?", min_value=1, max_value=len(data), value = 50 ,step=1)
-    st.dataframe(data[:row_number].reset_index(drop = True))
-    linko =srv.get_table_download_link(data[:row_number])
+
+    data = srv.calculate_percentage_race_by_county(demography, race_map[race_selected], agegrp=agegrp_map[agegrp], year=year_map[year]).reset_index(drop = True)
+    data = data.rename(columns={race_map[race_selected]: race_selected + ' percentage'})
+    
+    row_number = st.slider(
+        "Quante contee vuoi visualizzare?",
+        min_value=1,
+        max_value=len(data), 
+        value=50, 
+        step=1
+    )
+    
+    st.dataframe(data[:row_number])
+    linko = srv.get_table_download_link(data[:row_number])
     st.markdown(linko, unsafe_allow_html=True)

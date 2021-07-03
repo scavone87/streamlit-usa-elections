@@ -1,9 +1,4 @@
-from PIL.Image import new
-from numpy.lib.arraysetops import unique
 import streamlit as st
-import pandas as pd
-import numpy as np
-import services as srv
 import elections
 import demography
 import pro_capite
