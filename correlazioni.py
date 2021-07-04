@@ -28,12 +28,12 @@ def app():
     c = alt.Chart(votes_and_procapite_by_candidate).mark_circle().encode(
         alt.X(
             '2016',
-             title="Reddito Pro Capite 2016", 
+             title="Pro Capite 2016", 
              scale = alt.Scale(zero = False)
         ), 
         alt.Y(
             'percentage_votes', 
-            title=selected_candidate + " votes", 
+            title= selected_candidate + " percentage votes", 
             scale = alt.Scale(zero = False)
         ), 
         tooltip = ['state','county'], 
@@ -51,12 +51,12 @@ def app():
     points = alt.Chart(votes_and_procapite_winners).mark_point().encode(
         alt.X(
             '2016',
-            title="Reddito Pro Capite 2016",
+            title="Pro Capite 2016",
             scale=alt.Scale(zero=False)
         ),
         alt.Y(
             'percentage_votes',
-            title= "Percentuale voti dei vincitori",
+            title= "Percentage votes of winners",
             scale=alt.Scale(zero=False)
         ),
         color=alt.Color('candidate', sort='descending'),
@@ -112,7 +112,7 @@ def app():
         ), 
         alt.Y(
             'percentage_votes', 
-            title=candidate + "percentage votes", 
+            title=candidate + " percentage votes", 
             scale=alt.Scale(zero=False)
         ),  
         color = alt.Color('STATENAME'), 
@@ -162,7 +162,7 @@ def app():
         ), 
         alt.Y(
             'percentage_votes', 
-            title=candidate + " votes", 
+            title=candidate + " percentage votes", 
             scale=alt.Scale(zero=False)
         ),   
         color = alt.Color("STATENAME") ,
@@ -192,12 +192,12 @@ def app():
     df_elections_graphics = alt.Chart(df_elections).mark_circle().encode(
         alt.X(
             'votes', 
-            title="votes", 
+            title="counties votes", 
             scale=alt.Scale(zero=False)
         ), 
         alt.Y(
             'weighted votes', 
-            title="weighted votes counties", 
+            title="weighted votes from neighboring counties", 
             scale=alt.Scale(zero=False)
         ), 
         color = alt.Color('STATENAME'),
@@ -224,7 +224,7 @@ def app():
         ), 
         alt.Y(
             'votes', 
-            title="votes", 
+            title="percentage votes", 
             scale=alt.Scale(zero=False)
         )
     ).interactive()
@@ -250,7 +250,7 @@ def app():
         ), 
         alt.Y(
             'votes', 
-            title="votes", 
+            title="percentage votes", 
             scale=alt.Scale(zero=False)
         )
     ).interactive()
