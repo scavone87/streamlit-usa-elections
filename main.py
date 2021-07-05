@@ -3,6 +3,9 @@ import elections
 import demography
 import pro_capite
 import correlazioni
+from session_state import count_sessions
+
+count_sessions()
 
 PAGES = {
     "Elezioni": elections,
