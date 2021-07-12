@@ -46,7 +46,7 @@ def app():
     tot = elections.groupby(['STATENAME', 'county'], as_index = False).sum()
     not_dem_and_rep['tot_votes'] = tot['votes']
     not_dem_and_rep['percentage_votes'] = (not_dem_and_rep['votes']/tot['votes'])*100
-    sorted_by_percentage = st.checkbox('Ordina per percentuale', key=1)
+    sorted_by_percentage = st.checkbox('Ordina per percentuale', key= bool)
     if sorted_by_percentage:
         df_county_download = not_dem_and_rep.sort_values('percentage_votes', ascending = False).reset_index(drop = True)
     else:
