@@ -46,7 +46,7 @@ def app():
     tot = elections.groupby(['STATENAME', 'county'], as_index = False).sum()
     not_dem_and_rep['tot_votes'] = tot['votes']
     not_dem_and_rep['percentage_votes'] = (not_dem_and_rep['votes']/tot['votes'])*100
-    sorted_by_percentage = st.checkbox('Ordina per percentuale', key= bool)
+    sorted_by_percentage = st.checkbox('Ordina per percentuale')
     if sorted_by_percentage:
         df_county_download = not_dem_and_rep.sort_values('percentage_votes', ascending = False).reset_index(drop = True)
     else:
@@ -62,12 +62,12 @@ def app():
     counties_in_favor = elections[max_votes_by_county][elections[max_votes_by_county].candidate == 'Donald J. Trump'].groupby('STATENAME').size().reset_index(name='in_favor')
     counties_in_favor = pd.merge(counties_by_states, counties_in_favor, how = 'inner')
     counties_in_favor['percentage_in_favor'] = round((counties_in_favor['in_favor'] / counties_in_favor['tot_county'])*100, 1)
-    sorted_by_percentage = st.checkbox('Ordina per percentuale', key=2)
+    sorted_by_percentage = st.checkbox('Ordina per percentuale', key = bytes('percentuale', 'utf-8'))
     if sorted_by_percentage:
         counties_in_favor = counties_in_favor.sort_values('percentage_in_favor', ascending = False)
     else:
         counties_in_favor = counties_in_favor.sort_values('in_favor', ascending = False)
-    states_trump = st.slider('Quanti stati vuoi vedere?', min_value=1, max_value= len(counties_in_favor), value= 3 ,step=1, key=2)
+    states_trump = st.slider('Quanti stati vuoi vedere?', min_value=1, max_value= len(counties_in_favor), value= 3 ,step=1, key=bytes('stati', 'utf-8'))
     st.dataframe(counties_in_favor[:states_trump].reset_index(drop = True))
     linko =srv.get_table_download_link(counties_in_favor[:states_trump])
     st.markdown(linko, unsafe_allow_html=True)
@@ -78,12 +78,12 @@ def app():
     counties_in_favor = pd.merge(counties_by_states, counties_in_favor, how = 'inner')
     counties_in_favor['percentage_in_favor'] = round((counties_in_favor['in_favor'] / counties_in_favor['tot_county'])*100,1)
     counties_in_favor = counties_in_favor.sort_values('percentage_in_favor', ascending = False)
-    sorted_by_percentage = st.checkbox('Ordina per percentuale', key=3)
+    sorted_by_percentage = st.checkbox('Ordina per percentuale', key=bytes('percentuale 2', 'utf-8'))
     if sorted_by_percentage:
         counties_in_favor = counties_in_favor.sort_values('percentage_in_favor', ascending = False)
     else:
         counties_in_favor = counties_in_favor.sort_values('in_favor', ascending = False)
-    states_clinton = st.slider('Quanti stati vuoi vedere?', min_value=1, max_value= len(counties_in_favor), value= 3, step=1, key=3)
+    states_clinton = st.slider('Quanti stati vuoi vedere?', min_value=1, max_value= len(counties_in_favor), value= 3, step=1, key=bytes('stati 2', 'utf-8'))
     st.dataframe(counties_in_favor[:states_clinton].reset_index(drop = True))
     linko =srv.get_table_download_link(counties_in_favor[:states_clinton])
     st.markdown(linko, unsafe_allow_html=True)

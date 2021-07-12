@@ -76,7 +76,7 @@ def app():
     race_selected = st.selectbox(
         'Scegli la razza',
         list(race_map.keys()),
-        key=1
+        key=bytes('race1', 'utf-8')
     )
 
     year_map = srv.year_census_map
@@ -84,14 +84,14 @@ def app():
         'Scegli un anno',
         list(year_map.keys()),
         index=8,
-        key = 1
+        key = bytes('year1', 'utf-8')
     )
 
     agegrp_map = srv.agegrp_map
     agegrp = st.selectbox(
         "Scegli una fascia d'età",
         list(agegrp_map.keys()),
-        key = 1
+        key = bytes('agegrp1', 'utf-8')
     )
 
     race_and_votes = srv.get_elections_and_race_by_county(elections, demography, race_map[race_selected], agegrp= agegrp_map[agegrp], year= year_map[year])
@@ -128,7 +128,7 @@ def app():
     race_selected = st.selectbox(
         'Scegli la razza ',
         list(race_map.keys()),
-        key = 2
+        key = bytes('race2', 'utf-8')
     )
 
     year_map = srv.year_census_map
@@ -136,14 +136,14 @@ def app():
         'Scegli un anno',
         list(year_map.keys()),
         index=8,
-        key = 2
+        key = bytes('year2', 'utf-8')
     )
 
     agegrp_map = srv.agegrp_map
     agegrp = st.selectbox(
         "Scegli una fascia d'età",
         list(agegrp_map.keys()),
-        key = 2
+        key = bytes('agegrp2', 'utf-8')
     )    
 
     candidate = st.selectbox(
@@ -184,7 +184,7 @@ def app():
     candidate = st.selectbox(
         'Scegli un candidato di cui vuoi verificare la correlazione ',
         df_elections['candidate'].unique(),
-        key=2
+        key=bytes('candidiate2', 'utf-8')
     )
 
     df_elections = df_elections[df_elections.candidate == candidate]
@@ -237,7 +237,7 @@ def app():
     winner = st.selectbox(
         'Scegli un vincitore',
         ['Donald J. Trump', 'Hillary Clinton'],
-        key=2
+        key=bytes('winner2', 'utf-8')
     )
 
     percentage_female,y = srv.calculate_percentage_woman(demography, elections, winner, race='BA_FEMALE')
