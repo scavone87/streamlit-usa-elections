@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import base64
+import multiprocessing as mp
+
 
 
 year_census_map = {
@@ -81,17 +83,14 @@ agegrp_map = {
 }
 
 
-@st.cache(allow_output_mutation=True)
-def load_dataset(path, na_values=""):
+@st.cache_resource
+def load_dataset(path, na_values=None):
     f = open(path)
-    if not na_values:
-        dataset = pd.read_csv(f)
-    else:
-        dataset = pd.read_csv(f, na_values=na_values)
+    dataset = pd.read_csv(f, na_values=na_values)
     return dataset
 
 
-@st.cache(suppress_st_warning=True)
+@st.cache_data
 def calculate_percentage_votes_by_county(df_elections, candidate = 0):
     """
     Calculates the percentage of votes for the input candidate by county.
@@ -108,15 +107,15 @@ def calculate_percentage_votes_by_county(df_elections, candidate = 0):
     pandas.core.frame.DataFrame: dataframe containing the percentage of votes for the input candidate by each county 
     
     """
-    sum_votes_county = df_elections.groupby(['state', 'county'], as_index=False).sum().drop(columns = ['STATEFP', 'COUNTYFP'])
-    sum_votes_county = sum_votes_county.rename(columns = {'votes' : 'sum_votes'})
+    sum_votes_county = df_elections.groupby(['state', 'county'], as_index=False).sum().drop(columns = ['STATEFP', 'COUNTYFP', 'STATENAME', 'candidate', 'NEIGHBORS', 'party', 'office'])
+    sum_votes_county = sum_votes_county.rename(columns={'votes': 'sum_votes'})
     elections_and_sum_votes = pd.merge(df_elections, sum_votes_county, how="inner", left_on=['state', 'county'], right_on=['state', 'county'])
     elections_and_sum_votes['percentage_votes'] = (elections_and_sum_votes['votes']/elections_and_sum_votes['sum_votes'])*100
     if candidate == 0:
         return elections_and_sum_votes[['STATENAME', 'county', 'COUNTYFP' ,'candidate' ,'votes' ,'percentage_votes']].reset_index(drop=True)
     return elections_and_sum_votes[elections_and_sum_votes.candidate == candidate][['STATENAME', 'county', 'votes', 'percentage_votes']].sort_values('percentage_votes', ascending= False).reset_index(drop=True)
 
-@st.cache(suppress_st_warning=True)
+@st.cache_data
 def calculate_percentage_votes_by_state(df_elections, candidate = 0):
     """
     Calculates the percentage of votes for the input candidate by state.
@@ -133,8 +132,8 @@ def calculate_percentage_votes_by_state(df_elections, candidate = 0):
     pandas.core.frame.DataFrame: dataframe containing the percentage of votes for the input candidate by each state 
     
     """
-    votes_candidate_by_state = df_elections.groupby(['STATENAME', 'candidate'], as_index=False).sum()
-    tot_votes_by_state = df_elections.groupby(['STATENAME'], as_index=False).sum()
+    votes_candidate_by_state = df_elections.groupby(['STATENAME', 'candidate'], as_index=False).sum().drop(columns = ['STATEFP', 'COUNTYFP', 'NEIGHBORS', 'party', 'office'])
+    tot_votes_by_state = df_elections.groupby(['STATENAME'], as_index=False).sum().drop(columns = ['STATEFP', 'COUNTYFP', 'NEIGHBORS', 'party', 'office', 'candidate'])
     tot_votes_by_state = tot_votes_by_state.rename(columns = {'votes' : 'total_votes'})
     elections_plus_tot_votes = pd.merge(votes_candidate_by_state, tot_votes_by_state, how="inner", left_on=["STATENAME"], right_on=["STATENAME"])
     elections_plus_tot_votes["percentage_votes"] = (elections_plus_tot_votes["votes"]/elections_plus_tot_votes["total_votes"]) * 100
@@ -143,7 +142,7 @@ def calculate_percentage_votes_by_state(df_elections, candidate = 0):
     return elections_plus_tot_votes[elections_plus_tot_votes.candidate == candidate].sort_values('STATENAME')['percentage_votes']
 
 
-@st.cache(suppress_st_warning=True)
+@st.cache_data
 def calculate_percentage_race_by_county(df_demography, race, agegrp = 0, year = 9):
     """
     Calculates the percentage of input race (male + female) for each county
@@ -170,7 +169,7 @@ def calculate_percentage_race_by_county(df_demography, race, agegrp = 0, year = 
     return df_total.sort_values(by=race, ascending = False)
 
 
-@st.cache(suppress_st_warning=True)
+@st.cache_data
 def calculate_percentage_race_by_state(df_demography,race, agegrp = 0, year = 9):
     """
     Calculates the percentage of input race (male + female) for each state
@@ -196,7 +195,7 @@ def calculate_percentage_race_by_state(df_demography,race, agegrp = 0, year = 9)
     df_total[race] = percentage_race
     return df_total
 
-@st.cache(suppress_st_warning=True)
+@st.cache_data
 def calculate_pro_capite(pro_capite_set, sort, year='Average'):
     if year != 'Average':
         return pro_capite_set[['State', 'County', year]].round(2).sort_values(year, ascending=sort).reset_index(drop = True)
@@ -207,7 +206,7 @@ def calculate_pro_capite(pro_capite_set, sort, year='Average'):
     })
     return df.sort_values('Average', ascending=sort).reset_index(drop = True)
 
-@st.cache(suppress_st_warning=True)
+@st.cache_data
 def get_table_download_link(df):
     """Generates a link allowing the data in a given pandas dataframe to be downloaded
     in:  dataframe
@@ -265,50 +264,66 @@ def get_elections_and_race_by_state(df_elections, df_demography, race, agegrp = 
     percentage_race = calculate_percentage_race_by_state(df_demography, race, agegrp= agegrp, year = year)
     return pd.merge(elections_with_percentage_by_state, percentage_race, how="inner", left_on=["STATENAME"], right_on=["STNAME"])
 
-@st.cache
+@st.cache_data
 def get_votes_and_procapite_dataset(procapite_dataset, elections_dataset):
-    procapite_filtered = procapite_dataset[['State', 'County', '2016']]
-    elections_filtered = elections_dataset[['state', 'county', 'candidate', 'votes']]
-    sum_votes = elections_filtered.groupby(["state", "county"], as_index=False).sum()
-    sum_votes = sum_votes.rename(columns = {"votes" : "sum_votes"})
-    elections_filtered = pd.merge(elections_filtered, sum_votes, how="inner")
-    elections_filtered["percentage_votes"] = (elections_filtered["votes"]/elections_filtered["sum_votes"]) * 100
-    df = pd.DataFrame()
-    df['State'] = procapite_filtered['State']
-    df[['County', 'City']] = procapite_filtered.County.str.split("+", expand = True)
-    plus_counties = df[df["City"].notnull()]
+    procapite_filtered = procapite_dataset[['State', 'County', '2016']].copy()
 
-    for index,county_va in enumerate(plus_counties.County):
-        county_va = county_va.strip()
-        independent_city = plus_counties.iloc[index].City.strip()
-        state = plus_counties.iloc[index].State
-        list_candidate = elections_filtered[(elections_filtered.state == state) & ((elections_filtered.county == county_va) | (elections_filtered.county == independent_city))]['candidate'].unique()
-        for candidate in list_candidate:
-            first_county_votes = elections_filtered[(elections_filtered.state == state) & (elections_filtered.county == county_va) & (elections_filtered.candidate == candidate)]['votes'].item()
-            first_county_tot_votes = elections_filtered[(elections_filtered.state == state) & (elections_filtered.county == county_va) & (elections_filtered.candidate == candidate)]['sum_votes'].item()
-            second_county_votes = elections_filtered[(elections_filtered.state == state) & (elections_filtered.county == (independent_city + " City")) & (elections_filtered.candidate == candidate)]['votes'].item() 
-            second_county_tot_votes = elections_filtered[(elections_filtered.state == state) & (elections_filtered.county == (independent_city + " City")) & (elections_filtered.candidate == candidate)]['sum_votes'].item() 
-            sum_votes_candidate = first_county_votes + second_county_votes
-            sum_tot_votes = first_county_tot_votes + second_county_tot_votes
-            percentage_double_cities = (sum_votes_candidate/sum_tot_votes) * 100
-            elections_filtered.loc[(elections_filtered.state == state) & (elections_filtered.county == county_va) & (elections_filtered.candidate == candidate), ['percentage_votes']] = percentage_double_cities
-            elections_filtered.loc[(elections_filtered.state == state) & (elections_filtered.county == county_va) & (elections_filtered.candidate == candidate), ['county']] = elections_filtered[(elections_filtered.state == state) & (elections_filtered.county == county_va) & (elections_filtered.candidate == candidate)]["county"] + " + " + independent_city
+    # Calculate the sum of votes and percentage at once and merge them into the original dataframe
+    vote_sums = elections_dataset.groupby(["state", "county"])["votes"].sum().rename("sum_votes")
+    elections_filtered = elections_dataset.merge(vote_sums, left_on=["state", "county"], right_index=True)
+    elections_filtered["percentage_votes"] = elections_filtered["votes"] / elections_filtered["sum_votes"] * 100
+
+    # Split counties with "+" and calculate the total votes and percentages
+    split_counties = procapite_filtered["County"].str.split("+", expand=True)
+    split_counties.columns = ['County', 'City']
+    procapite_filtered = pd.concat([procapite_filtered.drop('County', axis=1), split_counties], axis=1)
+    plus_counties = procapite_filtered[procapite_filtered["City"].notnull()]
+
+    for _, row in plus_counties.iterrows():
+        county_va = row.County.strip()
+        independent_city = row.City.strip()
+        state = row.State
+
+        mask = (
+            (elections_filtered.state == state) &
+            ((elections_filtered.county == county_va) | (elections_filtered.county == independent_city))
+        )
+        relevant_rows = elections_filtered[mask]
+        total_votes = relevant_rows["votes"].sum()
+        total_sum_votes = relevant_rows["sum_votes"].sum()
+
+        elections_filtered.loc[mask, 'votes'] = total_votes
+        elections_filtered.loc[mask, 'sum_votes'] = total_sum_votes
+        elections_filtered.loc[mask, 'percentage_votes'] = total_votes / total_sum_votes * 100
+        elections_filtered.loc[mask, 'county'] = f"{county_va} + {independent_city}"
+
+    # Merge the datasets and drop redundant columns
     votes_and_procapite = pd.merge(elections_filtered, procapite_filtered,  how='inner', left_on=['state','county'], right_on = ['State','County']).drop(columns=['State', 'County'])
+
     return votes_and_procapite
 
-@st.cache(suppress_st_warning=True)
+
+
+@st.cache_data
 def get_votes_and_procapite_by_winner(elections_dataset, procapite_dataset):
-    sum_votes_by_candidate = elections_dataset.groupby(['state', 'candidate'], as_index=False).sum().sort_values(by='state')
-    winners = sum_votes_by_candidate.groupby(['state'],as_index=False).max('votes')
-    votes_by_state = pd.merge(sum_votes_by_candidate, winners, how="inner")
-    votes_by_state = votes_by_state[['state', 'candidate', 'votes']]
-    sum_votes_state = elections_dataset.groupby(['state'], as_index=False).sum().sort_values(by='state')
-    votes_by_state['percentage_votes'] = votes_by_state['votes'] / sum_votes_state['votes'] * 100
-    mean_pro_capite = procapite_dataset.groupby('State').mean()['2016'].round(2).to_frame()
-    votes_and_pro_capite = pd.merge(votes_by_state, mean_pro_capite, how="inner", left_on=['state'], right_on=["State"])
+    # Get the total votes per state
+    total_votes_by_state = elections_dataset.groupby('state')['votes'].sum()
+
+    # Get the maximum votes by candidate per state and calculate percentage votes
+    max_votes_by_candidate = elections_dataset.groupby(['state', 'candidate'])['votes'].sum().reset_index()
+    max_votes_by_candidate['percentage_votes'] = max_votes_by_candidate.apply(lambda row: row['votes'] / total_votes_by_state[row['state']] * 100, axis=1)
+
+    # Identify the winner in each state
+    winners = max_votes_by_candidate.loc[max_votes_by_candidate.groupby('state')['votes'].idxmax()]
+
+    # Get mean procapite data and merge it with winners
+    mean_pro_capite = procapite_dataset.groupby('State')['2016'].mean().round(2).reset_index(name='mean_pro_capite')
+    votes_and_pro_capite = winners.merge(mean_pro_capite, left_on='state', right_on='State')
+
     return votes_and_pro_capite
 
-@st.cache(suppress_st_warning=True)
+
+
 def get_corr_coef_for_candidate(candidate, df, x, y, plot = True): 
         
     """
@@ -334,27 +349,55 @@ def get_corr_coef_for_candidate(candidate, df, x, y, plot = True):
     st.write('Non è stato possibile calcolare il coefficiente di correlazione')
 
 
-@st.cache
+def spearman_correlation(df, x, y):
+    correlation = df[[x, y]].corr(method='spearman').iloc[0, 1]
+    return correlation
+
+def kendall_correlation(df, x, y):
+    correlation = df[[x, y]].corr(method='kendall').iloc[0, 1]
+    return correlation
+
+@st.cache_data
+def calculate_weighted_votes_for_candidate(candidate_df):
+    for state in candidate_df.state.unique():
+        for county in candidate_df[(candidate_df.state == state)]['county']:
+            neighbors = candidate_df[(candidate_df.county == county) & (candidate_df.state == state)]['NEIGHBORS'].item().split(", ")
+            neighbor_votes = []
+            population = []
+            for neighbor in neighbors:
+                if not candidate_df[(candidate_df.county == neighbor) & (candidate_df.NEIGHBORS.str.contains(county))].empty:
+                    neighbor_votes.append(candidate_df[(candidate_df.county == neighbor) & (candidate_df.NEIGHBORS.str.contains(county))]['votes'].iat[0])
+                    population.append(candidate_df[(candidate_df.county == neighbor) & (candidate_df.NEIGHBORS.str.contains(county))]['TOT_POP'].iat[0])
+            if population:
+                candidate_df.loc[(candidate_df.state == state) & (candidate_df.county == county), ['weighted_votes']] = round(np.average(neighbor_votes, weights = population), 2)
+    return candidate_df
+
+@st.cache_data
 def calculate_weighted_votes(df_elections):
-    for candidate in df_elections.candidate.unique():
-        df_candidate = df_elections[df_elections.candidate == candidate]
-        for state in df_elections.state.unique():
-            for county in df_candidate[(df_candidate.state == state)]['county']:
-                neighbors = df_candidate[(df_candidate.county == county) & (df_candidate.state == state)]['NEIGHBORS'].item().split(", ")
-                neighbor_votes = []
-                population = []
-                for neighbor in neighbors:
-                    if not df_candidate[(df_candidate.county == neighbor) & (df_candidate.NEIGHBORS.str.contains(county))].empty:
-                        neighbor_votes.append(df_candidate[(df_candidate.county == neighbor) & (df_candidate.NEIGHBORS.str.contains(county))]['votes'].iat[0])
-                        population.append(df_candidate[(df_candidate.county == neighbor) & (df_candidate.NEIGHBORS.str.contains(county))]['TOT_POP'].iat[0])
-                if population:
-                    df_elections.loc[(df_elections.candidate == candidate) & (df_elections.state == state) & (df_elections.county == county), ['weighted votes']] = round(np.average(neighbor_votes, weights = population), 2)
-    return df_elections
+    df_elections['weighted_votes'] = 0
+    unique_candidates = df_elections.candidate.unique()
+
+    # Create a Pool of processes
+    with mp.Pool(mp.cpu_count()) as pool:
+        # Map the function to the list of dataframes, one for each candidate
+        result_list = pool.map(calculate_weighted_votes_for_candidate, [df_elections[df_elections.candidate == candidate] for candidate in unique_candidates])
+
+    # Concatenate the results
+    result_df = pd.concat(result_list)
+
+    return result_df
     
     
 def calculate_percentage_woman(df_demography, df_elections, candidate, race = 'TOT_FEMALE'):
-    a = df_demography[(df_demography.YEAR == 9) & (df_demography.AGEGRP == 0)].sort_values('state').groupby('state').sum()[race].reset_index(drop = True)
-    b = df_demography[(df_demography.YEAR == 9) & (df_demography.AGEGRP == 0)].sort_values('state').groupby('state').sum()['TOT_POP'].reset_index(drop = True)
+    # Filter df_demography once
+    demography_subset = df_demography[(df_demography.YEAR == 9) & (df_demography.AGEGRP == 0)].sort_values('state').groupby('state').sum()
+
+    # Calculate percentages
+    a = demography_subset[race]
+    b = demography_subset['TOT_POP']
     percentage_female = (a/b)*100
+
+    # Call the other function
     y = calculate_percentage_votes_by_state(df_elections, candidate)
-    return percentage_female,y
+
+    return percentage_female, y
