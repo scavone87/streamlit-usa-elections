@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import base64
-import multiprocessing as mp
+import concurrent.futures
 
 
 
@@ -376,11 +376,10 @@ def calculate_weighted_votes_for_candidate(candidate_df):
 def calculate_weighted_votes(df_elections):
     df_elections['weighted_votes'] = 0
     unique_candidates = df_elections.candidate.unique()
+    result_list = []
 
-    # Create a Pool of processes
-    with mp.Pool(mp.cpu_count()) as pool:
-        # Map the function to the list of dataframes, one for each candidate
-        result_list = pool.map(calculate_weighted_votes_for_candidate, [df_elections[df_elections.candidate == candidate] for candidate in unique_candidates])
+    for candidate in unique_candidates:
+        result_list.append(calculate_weighted_votes_for_candidate(df_elections[df_elections.candidate == candidate]))
 
     # Concatenate the results
     result_df = pd.concat(result_list)
