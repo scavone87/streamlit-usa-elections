@@ -107,13 +107,16 @@ def calculate_percentage_votes_by_county(df_elections, candidate = 0):
     pandas.core.frame.DataFrame: dataframe containing the percentage of votes for the input candidate by each county 
     
     """
-    sum_votes_county = df_elections.groupby(['state', 'county'], as_index=False).sum().drop(columns = ['STATEFP', 'COUNTYFP', 'STATENAME', 'candidate', 'NEIGHBORS', 'party', 'office'])
-    sum_votes_county = sum_votes_county.rename(columns={'votes': 'sum_votes'})
-    elections_and_sum_votes = pd.merge(df_elections, sum_votes_county, how="inner", left_on=['state', 'county'], right_on=['state', 'county'])
+    sum_votes_county = df_elections.groupby(['state', 'county'], as_index=False)['votes'].sum()
+    sum_votes_county.rename(columns={'votes': 'sum_votes'}, inplace=True)
+    
+    elections_and_sum_votes = pd.merge(df_elections, sum_votes_county, on=['state', 'county'])
     elections_and_sum_votes['percentage_votes'] = (elections_and_sum_votes['votes']/elections_and_sum_votes['sum_votes'])*100
+
     if candidate == 0:
         return elections_and_sum_votes[['STATENAME', 'county', 'COUNTYFP' ,'candidate' ,'votes' ,'percentage_votes']].reset_index(drop=True)
-    return elections_and_sum_votes[elections_and_sum_votes.candidate == candidate][['STATENAME', 'county', 'votes', 'percentage_votes']].sort_values('percentage_votes', ascending= False).reset_index(drop=True)
+    return elections_and_sum_votes[elections_and_sum_votes.candidate == candidate][['STATENAME', 'county', 'votes', 'percentage_votes']].sort_values('percentage_votes', ascending=False).reset_index(drop=True)
+
 
 @st.cache_data
 def calculate_percentage_votes_by_state(df_elections, candidate = 0):
@@ -132,11 +135,13 @@ def calculate_percentage_votes_by_state(df_elections, candidate = 0):
     pandas.core.frame.DataFrame: dataframe containing the percentage of votes for the input candidate by each state 
     
     """
-    votes_candidate_by_state = df_elections.groupby(['STATENAME', 'candidate'], as_index=False).sum().drop(columns = ['STATEFP', 'COUNTYFP', 'NEIGHBORS', 'party', 'office'])
-    tot_votes_by_state = df_elections.groupby(['STATENAME'], as_index=False).sum().drop(columns = ['STATEFP', 'COUNTYFP', 'NEIGHBORS', 'party', 'office', 'candidate'])
-    tot_votes_by_state = tot_votes_by_state.rename(columns = {'votes' : 'total_votes'})
-    elections_plus_tot_votes = pd.merge(votes_candidate_by_state, tot_votes_by_state, how="inner", left_on=["STATENAME"], right_on=["STATENAME"])
+    votes_candidate_by_state = df_elections.groupby(['STATENAME', 'candidate'], as_index=False)['votes'].sum()
+    tot_votes_by_state = df_elections.groupby(['STATENAME'], as_index=False)['votes'].sum()
+    
+    tot_votes_by_state.rename(columns={'votes' : 'total_votes'}, inplace=True)
+    elections_plus_tot_votes = pd.merge(votes_candidate_by_state, tot_votes_by_state, on="STATENAME")
     elections_plus_tot_votes["percentage_votes"] = (elections_plus_tot_votes["votes"]/elections_plus_tot_votes["total_votes"]) * 100
+    
     if candidate == 0:
         return elections_plus_tot_votes[["STATENAME", "candidate", "percentage_votes"]]
     return elections_plus_tot_votes[elections_plus_tot_votes.candidate == candidate].sort_values('STATENAME')['percentage_votes']
