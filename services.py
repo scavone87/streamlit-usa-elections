@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import base64
+import os
+from PIL import Image
+
 import concurrent.futures
 
 
@@ -59,6 +62,15 @@ race_map = {
   'Not Hispanic, Two or More Races' : "NHTOM",
   'Hispanic, Native Hawaiian and Other Pacific Islander alone' : "HNA"
 }
+
+def getIconPage():
+    # Ottenere il percorso del file relativo allo script corrente
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Costruire il percorso del file immagine utilizzando os.path.join
+    image_path = os.path.join(current_dir, 'imgs', 'united-states.png')
+    # Aprire l'immagine utilizzando il percorso corretto
+    im = Image.open(image_path)
+    return im
 
 agegrp_map = {
     'Total' : 0,
