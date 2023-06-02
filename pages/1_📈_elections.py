@@ -1,8 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from PIL import Image
 
 import services as srv
+
+
+im = Image.open("imgs\\united-states.png")
+st.set_page_config(page_title='Election USA 2016', page_icon=im, layout='centered', initial_sidebar_state='auto')
 
 elections = srv.load_dataset('datasets/election_group4_mod.csv')
 elections = elections[['state', 'STATENAME', 'STATEFP', 'COUNTYFP', "county", 'NEIGHBORS', "party", "office", 'candidate', 'votes']]

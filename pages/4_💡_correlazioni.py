@@ -2,8 +2,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import altair as alt
+from PIL import Image
+
 import services as srv
 
+im = Image.open("imgs\\united-states.png")
+st.set_page_config(page_title='Election USA 2016', page_icon=im, layout='centered', initial_sidebar_state='auto')
 
 st.title("Correlazioni")
 

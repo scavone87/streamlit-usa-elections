@@ -1,5 +1,11 @@
 import streamlit as st
+from PIL import Image
+
 import services as srv
+
+
+im = Image.open("imgs\\united-states.png")
+st.set_page_config(page_title='Election USA 2016', page_icon=im, layout='centered', initial_sidebar_state='auto')
 
 
 pro_capite = srv.load_dataset('datasets/CAINC1__1969_2019-Percapitapersonalincome(dollars)2.csv', "(NA)")
